@@ -1,5 +1,5 @@
 # fft_3sum
-Investigation on something I overheard and wanted to discover for myself. I overheard that it was possible to solve the 3SUM computing problem using a FFT.
+This is a "from-first-principles" investigation on something I overheard and wanted to discover for myself. I overheard that it was possible to solve the 3SUM computing problem using a FFT.
 
 This has been a really helpful source for FFT: https://pythonnumericalmethods.berkeley.edu/notebooks/chapter24.03-Fast-Fourier-Transform.html
 
@@ -68,4 +68,59 @@ However, running it this way is inefficient. Thus, the fast fourier transform wa
 
 Essentially, you divide the problem into odds and evens (first step), and then you factor out the e^(...) term. We can see this is symmetrical, so we need to perform the DFT of half the size, but twice.
 
-We can continue this until we reach just a single odd and even number
+`NOTE: Why does this really reduce the computations? The link doesn't explain.`
+
+We can continue this until we reach just a single odd and even number. The obvious limitation with this approach is that the O(N log N) comes with the limitation that input must be a power of 2.
+
+# What does this have to do with 3SUM?
+
+Exactly my thought. I believe this will be clear once we recap certain concepts.
+
+## Convolution
+
+Recall that a multiplication in the frequency domain is a convolution in the time domain.
+
+Recall the continuous-time convolution:
+
+![Continuous Convolution](./images/CCONV.png "Image")
+
+and recall the discrete-time convolution:
+
+![Continuous Convolution](./images/DCONV.png "Image")
+
+Note that if you implement this in python:
+
+```
+# Here's an implementation I took from https://stackoverflow.com/questions/54523863/comma-index-in-python-list-bracket
+def convolve_1d(input_1, input_2):
+    # Reverse your second input
+    input_2 = input_2[::-1]
+    convolution = []
+    # Flip, shift up by +1, and then calculate the dot product at each point
+    for i in range(1-len(input_2), len(input_1)):
+        convolution.append(
+            # NOTE: I have absolutely no clue what this means, it seems really obfuscated to me
+            np.dot(
+                    input_1[max(0,i) : min(i+len(input_2),len(input_1))],
+                    input_2[max(-i,0) : len(input_1)-i*(len(input_1)-len(input_2)<i)]
+            )
+        )
+    return convolution
+```
+
+This has a time complexity of O(n^2).
+
+## Pascal's Triangle
+
+We all vaguely remember pascal's triangle from long ago, it's simply taking the two numbers and summing them to generate the number below, as seen here:
+
+![Pascal's Triangle](./images/PTRIANGLE.png "Image")
+
+And you may also recall that these are the coefficients of multiplying polynomials (1 + x)^n, where n is the level of the triangle, and the coefficients of increasing or decreasing exponents are the numbers in the triangle.
+
+Another way to look at this triangle is that each row is a convolution of the previous row with the sequence [1, 1]
+
+What does this have to do with 3sum?
+
+## Coefficients of Polynomials
+
